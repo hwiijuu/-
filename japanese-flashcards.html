@@ -127,7 +127,7 @@
 
   .card-area{
     perspective:1600px;
-    height:340px;
+    height:380px;
     position:relative;
   }
   .card{
@@ -145,14 +145,24 @@
     background:#fff;
     border:1.5px solid var(--ink);
     box-shadow:6px 6px 0 var(--indigo-900);
+    overflow:hidden;
+  }
+  .face.back{transform:rotateY(180deg);background:#F6F1E4;}
+  .face-scroll{
+    width:100%;
+    height:100%;
+    overflow-y:auto;
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:center;
     text-align:center;
-    padding:24px;
+    padding:32px 26px;
+    box-sizing:border-box;
   }
-  .face.back{transform:rotateY(180deg);background:#F6F1E4;}
+  .face-scroll::-webkit-scrollbar{width:6px;}
+  .face-scroll::-webkit-scrollbar-thumb{background:var(--paper-dark);border-radius:3px;}
+  .face-scroll::-webkit-scrollbar-track{background:transparent;}
 
   .kanji{
     font-family:'Shippori Mincho',serif;
@@ -199,13 +209,43 @@
     color:var(--indigo-900);
   }
   .example{
-    margin-top:16px;
+    margin-top:0;
     font-size:15px;
     color:var(--ink);
     line-height:1.6;
+    text-align:left;
   }
   .example .jp{font-family:'Zen Kaku Gothic New',sans-serif;}
   .example .kr{display:block;font-size:13px;color:var(--ink-soft);margin-top:2px;font-family:'Noto Sans KR',sans-serif;}
+
+  .example-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    margin-top:16px;
+    max-width:100%;
+  }
+  .audio-btn{
+    flex-shrink:0;
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    border:1.5px solid var(--indigo-700);
+    background:#fff;
+    color:var(--indigo-700);
+    font-size:15px;
+    line-height:1;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:background .15s, color .15s, transform .1s;
+    padding:0;
+  }
+  .audio-btn:hover{background:var(--indigo-700);color:#fff;}
+  .audio-btn:active{transform:scale(0.9);}
+  .audio-btn.playing{background:var(--hanko);border-color:var(--hanko);color:#fff;}
 
   .hanko-mark{
     position:absolute;
@@ -377,7 +417,9 @@
     header h1{font-size:28px;}
     .kanji{font-size:48px;}
     .meaning{font-size:24px;}
-    .card-area{height:300px;}
+    .card-area{height:340px;}
+    .face-scroll{padding:24px 18px;}
+    .audio-btn{width:30px;height:30px;font-size:13px;}
     table.kana-table td{padding:6px 2px;}
     .kc .kj{font-size:17px;}
   }
@@ -417,17 +459,24 @@
         <div class="card" id="card">
           <div class="face front">
             <span class="level-badge" id="levelBadgeFront"></span>
-            <div class="kanji" id="kanjiText"></div>
             <div class="hanko-mark" id="hankoMarkFront" style="display:none;">覚えた</div>
             <div class="hint">클릭하여 뒤집기</div>
+            <div class="face-scroll">
+              <div class="kanji" id="kanjiText"></div>
+            </div>
           </div>
           <div class="face back">
             <span class="level-badge" id="levelBadgeBack"></span>
-            <div class="reading" id="readingText"></div>
-            <div class="romaji" id="romajiText"></div>
-            <div class="meaning" id="meaningText" style="margin-top:14px;"></div>
-            <div class="example" id="exampleText"></div>
             <div class="hanko-mark" id="hankoMarkBack" style="display:none;">覚えた</div>
+            <div class="face-scroll">
+              <div class="reading" id="readingText"></div>
+              <div class="romaji" id="romajiText"></div>
+              <div class="meaning" id="meaningText" style="margin-top:14px;"></div>
+              <div class="example-row">
+                <div class="example" id="exampleText"></div>
+                <button class="audio-btn" id="audioBtn" type="button" title="예문 듣기" aria-label="예문 듣기">🔊</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -491,14 +540,18 @@
           <div class="card" id="kanaCard">
             <div class="face front">
               <span class="level-badge" id="kanaBadgeFront"></span>
-              <div class="kanji" id="kanaCharText"></div>
               <div class="hanko-mark" id="kanaHankoFront" style="display:none;">覚えた</div>
               <div class="hint">클릭하여 뒤집기</div>
+              <div class="face-scroll">
+                <div class="kanji" id="kanaCharText"></div>
+              </div>
             </div>
             <div class="face back">
               <span class="level-badge" id="kanaBadgeBack"></span>
-              <div class="meaning" id="kanaRomajiBack"></div>
               <div class="hanko-mark" id="kanaHankoBack" style="display:none;">覚えた</div>
+              <div class="face-scroll">
+                <div class="meaning" id="kanaRomajiBack"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -819,15 +872,43 @@ function buildDeck(level){
   let list = [];
   if(level === "ALL"){
     Object.keys(DATA).forEach(lv=>{
-      DATA[lv].forEach(w=>list.push({lv, w}));
+      DATA[lv].forEach((w,i)=>list.push({lv, w, wIdx:i}));
     });
   } else {
-    DATA[level].forEach(w=>list.push({lv:level, w}));
+    DATA[level].forEach((w,i)=>list.push({lv:level, w, wIdx:i}));
   }
   return list;
 }
 
-function keyOf(item){ return item.lv + "_" + item.w[0]; }
+// 레벨 + 원본 배열 인덱스 + 뜻을 조합해 완전히 고유한 키를 생성한다.
+// (표기가 같은 동음이의어가 추가되어도 학습 완료 상태가 서로 섞이지 않도록 함)
+function keyOf(item){ return item.lv + "_" + item.wIdx + "_" + item.w[3]; }
+
+// "일본어 / 한국어" 형태의 예문을 안전하게 분리한다.
+// 구분자 앞뒤 공백 유무와 무관하게 정규식으로 매칭하고 각 파트를 trim한다.
+function splitExample(example){
+  if(!example) return ["", ""];
+  const parts = example.split(/\s*\/\s*/);
+  return [(parts[0] || "").trim(), (parts[1] || "").trim()];
+}
+
+// Web Speech API를 이용해 일본어 문장을 읽어준다.
+function speakJapanese(text, btnEl){
+  if(!text) return;
+  if(!('speechSynthesis' in window)){
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'ja-JP';
+  utter.rate = 0.9;
+  if(btnEl){
+    btnEl.classList.add('playing');
+    utter.onend = ()=> btnEl.classList.remove('playing');
+    utter.onerror = ()=> btnEl.classList.remove('playing');
+  }
+  window.speechSynthesis.speak(utter);
+}
 
 function renderTabs(){
   const tabs = document.getElementById("tabs");
@@ -843,6 +924,11 @@ function renderTabs(){
 }
 
 function renderCard(){
+  // 카드가 바뀔 때는 재생 중이던 음성을 즉시 중지한다.
+  if('speechSynthesis' in window){
+    window.speechSynthesis.cancel();
+  }
+
   const card = document.getElementById("card");
   card.classList.remove("flipped");
   flipped = false;
@@ -858,12 +944,16 @@ function renderCard(){
   document.getElementById("levelBadgeFront").textContent = item.lv;
   document.getElementById("levelBadgeBack").textContent = item.lv;
 
-  if(example){
-    const parts = example.split(" / ");
+  const audioBtn = document.getElementById("audioBtn");
+  audioBtn.classList.remove("playing");
+  const [jp, kr] = splitExample(example);
+  if(jp){
     document.getElementById("exampleText").innerHTML =
-      '<span class="jp">'+parts[0]+'</span><span class="kr">'+(parts[1]||"")+'</span>';
+      '<span class="jp">'+jp+'</span>'+(kr ? '<span class="kr">'+kr+'</span>' : '');
+    audioBtn.style.display = "flex";
   } else {
     document.getElementById("exampleText").innerHTML = "";
+    audioBtn.style.display = "none";
   }
 
   document.getElementById("hankoMarkFront").style.display = isMastered ? "flex":"none";
@@ -938,6 +1028,17 @@ document.getElementById("stampBtn").onclick = (e)=>{
   renderCard();
 };
 
+document.getElementById("audioBtn").onclick = (e)=>{
+  e.stopPropagation();
+  const item = deck[idx];
+  const [jp] = splitExample(item.w[4]);
+  speakJapanese(jp, document.getElementById("audioBtn"));
+};
+
+if(!('speechSynthesis' in window)){
+  document.getElementById("audioBtn").style.display = "none";
+}
+
 document.querySelectorAll(".face").forEach(f=>{
   f.querySelectorAll("button").forEach(b=>b.addEventListener("click", e=>e.stopPropagation()));
 });
@@ -1003,6 +1104,7 @@ let kanaType = "hiragana";
 let kanaMode = "chart";
 let kanaDeck = [];
 let kanaIdx = 0;
+let kanaFlipped = false;
 let kanaMastered = {};
 
 function loadKanaMastered(){
@@ -1060,7 +1162,9 @@ function kanaKeyOf(item){ return item.type + "_" + item.char; }
 
 function renderKanaCard(){
   const card = document.getElementById("kanaCard");
+  // 카드가 바뀔 때 클래스와 상태 변수를 함께 초기화해 앞면이 항상 먼저 보이도록 동기화한다.
   card.classList.remove("flipped");
+  kanaFlipped = false;
 
   const item = kanaDeck[kanaIdx];
   const isMastered = !!kanaMastered[kanaKeyOf(item)];
@@ -1108,7 +1212,8 @@ function renderKanaAlbum(){
 }
 
 document.getElementById("kanaCard").addEventListener("click", ()=>{
-  document.getElementById("kanaCard").classList.toggle("flipped");
+  kanaFlipped = !kanaFlipped;
+  document.getElementById("kanaCard").classList.toggle("flipped", kanaFlipped);
 });
 document.getElementById("kanaPrevBtn").onclick = (e)=>{
   e.stopPropagation();
@@ -1172,12 +1277,14 @@ document.getElementById("kanaPracticeBtn").onclick = ()=>{
 };
 
 document.getElementById("modeVocabBtn").onclick = ()=>{
+  if('speechSynthesis' in window){ window.speechSynthesis.cancel(); }
   document.getElementById("modeVocabBtn").classList.add("active");
   document.getElementById("modeKanaBtn").classList.remove("active");
   document.getElementById("vocabSection").style.display = "block";
   document.getElementById("kanaSection").style.display = "none";
 };
 document.getElementById("modeKanaBtn").onclick = ()=>{
+  if('speechSynthesis' in window){ window.speechSynthesis.cancel(); }
   document.getElementById("modeKanaBtn").classList.add("active");
   document.getElementById("modeVocabBtn").classList.remove("active");
   document.getElementById("vocabSection").style.display = "none";
