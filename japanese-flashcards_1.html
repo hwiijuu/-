@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>単語帳 - 일본어 단어장</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --indigo-900:#182B45;
+    --indigo-700:#22405F;
+    --indigo-500:#3D5A80;
+    --paper:#ECE3CE;
+    --paper-dark:#DDD1B4;
+    --ink:#2A2A28;
+    --ink-soft:#5B5A52;
+    --hanko:#A8342A;
+    --hanko-dark:#7E241C;
+    --gold:#B8923F;
+    --line:rgba(42,42,40,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Zen Kaku Gothic New','Noto Sans KR',sans-serif;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(42,42,40,0.05) 1px, transparent 0);
+    background-size: 18px 18px;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:32px 24px 64px;}
+
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:18px;
+    margin-bottom:28px;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  header h1{
+    font-family:'Shippori Mincho', serif;
+    font-weight:700;
+    font-size:38px;
+    margin:0;
+    letter-spacing:2px;
+    color:var(--indigo-900);
+  }
+  header .sub{
+    font-family:'Noto Sans KR',sans-serif;
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-top:4px;
+    letter-spacing:0.5px;
+  }
+  header .stamp-count{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    color:var(--indigo-700);
+    text-align:right;
+  }
+  header .stamp-count b{
+    font-size:22px;
+    color:var(--hanko);
+    display:block;
+  }
+
+  .tabs{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:24px;
+  }
+  .tab{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    padding:8px 16px;
+    background:transparent;
+    border:1.5px solid var(--ink);
+    color:var(--ink);
+    cursor:pointer;
+    border-radius:0;
+    position:relative;
+  }
+  .tab.active{
+    background:var(--indigo-900);
+    color:var(--paper);
+    border-color:var(--indigo-900);
+  }
+  .tab .cnt{
+    font-size:10px;
+    opacity:0.7;
+    margin-left:4px;
+  }
+
+  .stage{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap:24px;
+  }
+
+  .progress-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .progress-bar{
+    flex:1;
+    height:3px;
+    background:var(--paper-dark);
+    margin:0 14px;
+    position:relative;
+  }
+  .progress-bar i{
+    display:block;
+    height:100%;
+    background:var(--hanko);
+  }
+
+  .card-area{
+    perspective:1600px;
+    height:340px;
+    position:relative;
+  }
+  .card{
+    position:absolute;
+    inset:0;
+    cursor:pointer;
+    transform-style:preserve-3d;
+    transition:transform 0.5s cubic-bezier(.2,.8,.2,1);
+  }
+  .card.flipped{transform:rotateY(180deg);}
+  .face{
+    position:absolute;
+    inset:0;
+    backface-visibility:hidden;
+    background:#fff;
+    border:1.5px solid var(--ink);
+    box-shadow:6px 6px 0 var(--indigo-900);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:24px;
+  }
+  .face.back{transform:rotateY(180deg);background:#F6F1E4;}
+
+  .kanji{
+    font-family:'Shippori Mincho',serif;
+    font-weight:700;
+    font-size:64px;
+    color:var(--indigo-900);
+    line-height:1.1;
+  }
+  .reading{
+    font-family:'Zen Kaku Gothic New',sans-serif;
+    font-size:18px;
+    color:var(--ink-soft);
+    margin-top:8px;
+  }
+  .romaji{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    color:var(--gold);
+    margin-top:10px;
+    letter-spacing:1px;
+  }
+  .level-badge{
+    position:absolute;
+    top:14px;
+    left:16px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--indigo-700);
+    border:1px solid var(--indigo-700);
+    padding:2px 8px;
+  }
+  .hint{
+    position:absolute;
+    bottom:14px;
+    right:16px;
+    font-size:11px;
+    color:var(--ink-soft);
+    font-family:'Noto Sans KR',sans-serif;
+  }
+  .meaning{
+    font-family:'Noto Sans KR',sans-serif;
+    font-weight:700;
+    font-size:30px;
+    color:var(--indigo-900);
+  }
+  .example{
+    margin-top:16px;
+    font-size:15px;
+    color:var(--ink);
+    line-height:1.6;
+  }
+  .example .jp{font-family:'Zen Kaku Gothic New',sans-serif;}
+  .example .kr{display:block;font-size:13px;color:var(--ink-soft);margin-top:2px;font-family:'Noto Sans KR',sans-serif;}
+
+  .hanko-mark{
+    position:absolute;
+    width:56px;
+    height:56px;
+    top:14px;
+    right:14px;
+    border:3px solid var(--hanko);
+    color:var(--hanko);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Shippori Mincho',serif;
+    font-weight:700;
+    font-size:13px;
+    border-radius:6px;
+    transform:rotate(-8deg);
+    opacity:0.92;
+    mix-blend-mode:multiply;
+    letter-spacing:1px;
+  }
+
+  .controls{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .controls .side{display:flex;gap:8px;}
+  button.ctl{
+    font-family:'Noto Sans KR',sans-serif;
+    font-size:14px;
+    font-weight:500;
+    padding:10px 18px;
+    border:1.5px solid var(--ink);
+    background:#fff;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  button.ctl:hover{background:var(--paper-dark);}
+  button.ctl.primary{
+    background:var(--indigo-900);
+    color:var(--paper);
+    border-color:var(--indigo-900);
+  }
+  button.ctl.primary:hover{background:var(--indigo-700);}
+  button.ctl.stamp{
+    background:var(--hanko);
+    color:#fff;
+    border-color:var(--hanko);
+  }
+  button.ctl.stamp:hover{background:var(--hanko-dark);}
+  button.ctl:disabled{opacity:0.35;cursor:default;}
+
+  .album{
+    margin-top:36px;
+    border-top:2px dashed var(--paper-dark);
+    padding-top:20px;
+  }
+  .album h2{
+    font-family:'Shippori Mincho',serif;
+    font-size:17px;
+    color:var(--indigo-900);
+    margin:0 0 12px;
+  }
+  .album .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(90px,1fr));
+    gap:10px;
+  }
+  .album .stamp-tile{
+    border:1px solid var(--line);
+    background:#fff;
+    padding:8px 6px;
+    text-align:center;
+    position:relative;
+  }
+  .album .stamp-tile .k{
+    font-family:'Shippori Mincho',serif;
+    font-size:18px;
+    color:var(--indigo-900);
+  }
+  .album .stamp-tile .m{
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-top:2px;
+  }
+  .album .stamp-tile::after{
+    content:'済';
+    position:absolute;
+    top:2px;
+    right:4px;
+    font-family:'Shippori Mincho',serif;
+    font-size:10px;
+    color:var(--hanko);
+  }
+  .album .empty{
+    font-size:13px;
+    color:var(--ink-soft);
+    font-style:italic;
+  }
+
+  @media (max-width:560px){
+    header h1{font-size:28px;}
+    .kanji{font-size:48px;}
+    .meaning{font-size:24px;}
+    .card-area{height:300px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>単語帳</h1>
+      <div class="sub">일본어 단어 플래시카드 · 전 레벨 학습</div>
+    </div>
+    <div class="stamp-count">
+      외운 단어
+      <b id="stampTotal">0</b>
+    </div>
+  </header>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="stage">
+    <div class="progress-row">
+      <span id="posLabel">1 / 12</span>
+      <div class="progress-bar"><i id="progressFill" style="width:0%"></i></div>
+      <span id="deckLabel">전체</span>
+    </div>
+
+    <div class="card-area">
+      <div class="card" id="card">
+        <div class="face front">
+          <span class="level-badge" id="levelBadgeFront"></span>
+          <div class="kanji" id="kanjiText"></div>
+          <div class="hanko-mark" id="hankoMarkFront" style="display:none;">覚えた</div>
+          <div class="hint">클릭하여 뒤집기</div>
+        </div>
+        <div class="face back">
+          <span class="level-badge" id="levelBadgeBack"></span>
+          <div class="reading" id="readingText"></div>
+          <div class="romaji" id="romajiText"></div>
+          <div class="meaning" id="meaningText" style="margin-top:14px;"></div>
+          <div class="example" id="exampleText"></div>
+          <div class="hanko-mark" id="hankoMarkBack" style="display:none;">覚えた</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="side">
+        <button class="ctl" id="prevBtn">← 이전</button>
+        <button class="ctl" id="shuffleBtn">섞기</button>
+      </div>
+      <div class="side">
+        <button class="ctl stamp" id="stampBtn">도장 찍기 (외웠음)</button>
+        <button class="ctl primary" id="nextBtn">다음 →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="album">
+    <h2>외운 단어 도장첩</h2>
+    <div class="grid" id="albumGrid"></div>
+  </div>
+
+</div>
+
+<script>
+const DATA = {
+  N5: [
+    ["私","わたし","watashi","나 / 저",""],
+    ["学校","がっこう","gakkou","학교","毎日学校へ行きます。 / 매일 학교에 갑니다."],
+    ["食べる","たべる","taberu","먹다","朝ご飯を食べる。 / 아침밥을 먹다."],
+    ["水","みず","mizu","물","水を飲みます。 / 물을 마십니다."],
+    ["今日","きょう","kyou","오늘","今日は天気がいい。 / 오늘은 날씨가 좋다."],
+    ["友達","ともだち","tomodachi","친구","友達と遊ぶ。 / 친구와 놀다."],
+    ["大きい","おおきい","ookii","크다","大きい犬がいる。 / 큰 개가 있다."],
+    ["行く","いく","iku","가다","学校に行く。 / 학교에 가다."],
+    ["時間","じかん","jikan","시간","時間がない。 / 시간이 없다."],
+    ["好き","すき","suki","좋아함","音楽が好きです。 / 음악을 좋아합니다."],
+    ["本","ほん","hon","책","本を読む。 / 책을 읽다."],
+    ["元気","げんき","genki","건강함, 활기참","お元気ですか。 / 잘 지내세요?"],
+    ["飲む","のむ","nomu","마시다","水を飲む。 / 물을 마시다."],
+    ["見る","みる","miru","보다","映画を見る。 / 영화를 보다."],
+    ["聞く","きく","kiku","듣다, 묻다","音楽を聞く。 / 음악을 듣다."],
+    ["読む","よむ","yomu","읽다","新聞を読む。 / 신문을 읽다."],
+    ["書く","かく","kaku","쓰다","手紙を書く。 / 편지를 쓰다."],
+    ["話す","はなす","hanasu","말하다","日本語を話す。 / 일본어를 말하다."],
+    ["買う","かう","kau","사다","服を買う。 / 옷을 사다."],
+    ["高い","たかい","takai","비싸다, 높다","このかばんは高い。 / 이 가방은 비싸다."],
+    ["安い","やすい","yasui","싸다","安い店を探す。 / 싼 가게를 찾다."],
+    ["新しい","あたらしい","atarashii","새롭다","新しい車を買った。 / 새 차를 샀다."],
+    ["古い","ふるい","furui","낡다, 오래되다","古い建物。 / 오래된 건물."],
+    ["家族","かぞく","kazoku","가족","家族と旅行する。 / 가족과 여행하다."],
+    ["会社","かいしゃ","kaisha","회사","会社に行く。 / 회사에 가다."],
+    ["天気","てんき","tenki","날씨","今日は天気がいい。 / 오늘은 날씨가 좋다."],
+    ["誕生日","たんじょうび","tanjoubi","생일","誕生日おめでとう。 / 생일 축하해."],
+    ["電話","でんわ","denwa","전화","電話をかける。 / 전화를 걸다."],
+    ["毎日","まいにち","mainichi","매일","毎日勉強する。 / 매일 공부하다."],
+    ["早い","はやい","hayai","이르다, 빠르다","朝早く起きる。 / 아침 일찍 일어나다."]
+  ],
+  N4: [
+    ["経験","けいけん","keiken","경험","いい経験になった。 / 좋은 경험이 되었다."],
+    ["準備","じゅんび","junbi","준비","旅行の準備をする。 / 여행 준비를 하다."],
+    ["説明","せつめい","setsumei","설명","詳しく説明する。 / 자세히 설명하다."],
+    ["便利","べんり","benri","편리함","このアプリは便利だ。 / 이 앱은 편리하다."],
+    ["約束","やくそく","yakusoku","약속","約束を守る。 / 약속을 지키다."],
+    ["心配","しんぱい","shinpai","걱정","心配しないで。 / 걱정하지 마."],
+    ["続ける","つづける","tsuzukeru","계속하다","勉強を続ける。 / 공부를 계속하다."],
+    ["最近","さいきん","saikin","최근","最近忙しい。 / 최근 바쁘다."],
+    ["十分","じゅうぶん","juubun","충분함","十分な時間がある。 / 충분한 시간이 있다."],
+    ["変える","かえる","kaeru","바꾸다","予定を変える。 / 예정을 바꾸다."],
+    ["集める","あつめる","atsumeru","모으다","情報を集める。 / 정보를 모으다."],
+    ["意見","いけん","iken","의견","意見を言う。 / 의견을 말하다."],
+    ["用意","ようい","youi","준비","食事の用意をする。 / 식사 준비를 하다."],
+    ["招待","しょうたい","shoutai","초대","パーティーに招待する。 / 파티에 초대하다."],
+    ["相談","そうだん","soudan","상담","先生に相談する。 / 선생님과 상담하다."],
+    ["選ぶ","えらぶ","erabu","고르다","プレゼントを選ぶ。 / 선물을 고르다."],
+    ["苦しい","くるしい","kurushii","괴롭다","息が苦しい。 / 숨이 괴롭다."],
+    ["失敗","しっぱい","shippai","실패","実験に失敗する。 / 실험에 실패하다."],
+    ["成功","せいこう","seikou","성공","事業に成功する。 / 사업에 성공하다."],
+    ["習慣","しゅうかん","shuukan","습관","いい習慣を作る。 / 좋은 습관을 만들다."],
+    ["決める","きめる","kimeru","정하다","予定を決める。 / 예정을 정하다."],
+    ["増える","ふえる","fueru","늘다","人口が増える。 / 인구가 늘다."],
+    ["減る","へる","heru","줄다","収入が減る。 / 수입이 줄다."],
+    ["頑張る","がんばる","ganbaru","노력하다","試験に向けて頑張る。 / 시험을 위해 노력하다."],
+    ["注意","ちゅうい","chuui","주의","車に注意する。 / 차를 주의하다."],
+    ["訪問","ほうもん","houmon","방문","友人を訪問する。 / 친구를 방문하다."],
+    ["到着","とうちゃく","touchaku","도착","空港に到着する。 / 공항에 도착하다."],
+    ["出発","しゅっぱつ","shuppatsu","출발","朝早く出発する。 / 아침 일찍 출발하다."],
+    ["予定","よてい","yotei","예정","今日の予定を確認する。 / 오늘 예정을 확인하다."],
+    ["大切","たいせつ","taisetsu","소중함","家族を大切にする。 / 가족을 소중히 하다."]
+  ],
+  N3: [
+    ["影響","えいきょう","eikyou","영향","天気に影響される。 / 날씨에 영향받다."],
+    ["判断","はんだん","handan","판단","冷静に判断する。 / 냉정하게 판단하다."],
+    ["状況","じょうきょう","joukyou","상황","状況を確認する。 / 상황을 확인하다."],
+    ["効果","こうか","kouka","효과","効果がある。 / 효과가 있다."],
+    ["解決","かいけつ","kaiketsu","해결","問題を解決する。 / 문제를 해결하다."],
+    ["印象","いんしょう","inshou","인상","第一印象が大事だ。 / 첫인상이 중요하다."],
+    ["反対","はんたい","hantai","반대","計画に反対する。 / 계획에 반대하다."],
+    ["割合","わりあい","wariai","비율","女性の割合が高い。 / 여성 비율이 높다."],
+    ["対象","たいしょう","taishou","대상","学生を対象にする。 / 학생을 대상으로 하다."],
+    ["維持","いじ","iji","유지","健康を維持する。 / 건강을 유지하다."],
+    ["実際","じっさい","jissai","실제","実際に見てみる。 / 실제로 보다."],
+    ["傾向","けいこう","keikou","경향","増加する傾向がある。 / 증가하는 경향이 있다."],
+    ["原因","げんいん","gen'in","원인","事故の原因を調べる。 / 사고 원인을 조사하다."],
+    ["結果","けっか","kekka","결과","テストの結果が出た。 / 시험 결과가 나왔다."],
+    ["特徴","とくちょう","tokuchou","특징","商品の特徴を説明する。 / 상품의 특징을 설명하다."],
+    ["比較","ひかく","hikaku","비교","二つの案を比較する。 / 두 안을 비교하다."],
+    ["評価","ひょうか","hyouka","평가","作品を評価する。 / 작품을 평가하다."],
+    ["提案","ていあん","teian","제안","新しい方法を提案する。 / 새로운 방법을 제안하다."],
+    ["検討","けんとう","kentou","검토","計画を検討する。 / 계획을 검토하다."],
+    ["対応","たいおう","taiou","대응","問題に対応する。 / 문제에 대응하다."],
+    ["減少","げんしょう","genshou","감소","人口が減少する。 / 인구가 감소하다."],
+    ["増加","ぞうか","zouka","증가","売上が増加する。 / 매출이 증가하다."],
+    ["環境","かんきょう","kankyou","환경","環境を守る。 / 환경을 지키다."],
+    ["制限","せいげん","seigen","제한","時間を制限する。 / 시간을 제한하다."],
+    ["許可","きょか","kyoka","허가","使用を許可する。 / 사용을 허가하다."],
+    ["禁止","きんし","kinshi","금지","喫煙を禁止する。 / 흡연을 금지하다."],
+    ["義務","ぎむ","gimu","의무","納税の義務がある。 / 납세의 의무가 있다."],
+    ["権利","けんり","kenri","권리","権利を主張する。 / 권리를 주장하다."],
+    ["責任","せきにん","sekinin","책임","責任を取る。 / 책임을 지다."],
+    ["参加","さんか","sanka","참가","イベントに参加する。 / 이벤트에 참가하다."]
+  ],
+  N2: [
+    ["概念","がいねん","gainen","개념","新しい概念を学ぶ。 / 새로운 개념을 배우다."],
+    ["矛盾","むじゅん","mujun","모순","話に矛盾がある。 / 이야기에 모순이 있다."],
+    ["抽象","ちゅうしょう","chuushou","추상","抽象的な表現。 / 추상적인 표현."],
+    ["普及","ふきゅう","fukyuu","보급","スマホが普及した。 / 스마트폰이 보급되었다."],
+    ["妥協","だきょう","dakyou","타협","妥協点を探す。 / 타협점을 찾다."],
+    ["潜在","せんざい","senzai","잠재","潜在的な能力。 / 잠재적인 능력."],
+    ["促進","そくしん","sokushin","촉진","成長を促進する。 / 성장을 촉진하다."],
+    ["顕著","けんちょ","kencho","현저함","顕著な変化。 / 현저한 변화."],
+    ["憶測","おくそく","okusoku","억측, 추측","憶測で話す。 / 추측으로 말하다."],
+    ["遂行","すいこう","suikou","수행","任務を遂行する。 / 임무를 수행하다."],
+    ["是正","ぜせい","zesei","시정","誤りを是正する。 / 오류를 시정하다."],
+    ["円滑","えんかつ","enkatsu","원활함","円滑に進める。 / 원활하게 진행하다."],
+    ["依存","いぞん","izon","의존","スマホに依存する。 / 스마트폰에 의존하다."],
+    ["継続","けいぞく","keizoku","계속","事業を継続する。 / 사업을 계속하다."],
+    ["対策","たいさく","taisaku","대책","対策を立てる。 / 대책을 세우다."],
+    ["分析","ぶんせき","bunseki","분석","データを分析する。 / 데이터를 분석하다."],
+    ["統計","とうけい","toukei","통계","統計を取る。 / 통계를 내다."],
+    ["傾く","かたむく","katamuku","기울다","意見が一方に傾く。 / 의견이 한쪽으로 기울다."],
+    ["徹底","てってい","tettei","철저","徹底的に調べる。 / 철저하게 조사하다."],
+    ["慎重","しんちょう","shinchou","신중함","慎重に判断する。 / 신중하게 판단하다."],
+    ["柔軟","じゅうなん","juunan","유연함","柔軟に対応する。 / 유연하게 대응하다."],
+    ["迅速","じんそく","jinsoku","신속함","迅速に処理する。 / 신속하게 처리하다."],
+    ["一律","いちりつ","ichiritsu","일률적","一律に扱う。 / 일률적으로 다루다."],
+    ["該当","がいとう","gaitou","해당","条件に該当する。 / 조건에 해당하다."],
+    ["適用","てきよう","tekiyou","적용","新しい規則を適用する。 / 새 규칙을 적용하다."],
+    ["拡大","かくだい","kakudai","확대","事業を拡大する。 / 사업을 확대하다."],
+    ["縮小","しゅくしょう","shukushou","축소","規模を縮小する。 / 규모를 축소하다."],
+    ["相互","そうご","sougo","상호","相互に協力する。 / 상호 협력하다."],
+    ["均衡","きんこう","kinkou","균형","バランスを均衡させる。 / 균형을 맞추다."],
+    ["見解","けんかい","kenkai","견해","異なる見解を持つ。 / 다른 견해를 가지다."]
+  ],
+  N1: [
+    ["曖昧","あいまい","aimai","애매함","曖昧な返事。 / 애매한 대답."],
+    ["逸脱","いつだつ","itsudatsu","일탈","規範から逸脱する。 / 규범에서 일탈하다."],
+    ["顕在化","けんざいか","kenzaika","현재화, 드러남","問題が顕在化する。 / 문제가 드러나다."],
+    ["折衝","せっしょう","sesshou","절충, 교섭","価格の折衝をする。 / 가격 교섭을 하다."],
+    ["払拭","ふっしょく","fusshoku","불식","不安を払拭する。 / 불안을 불식하다."],
+    ["示唆","しさ","shisa","시사","結果を示唆する。 / 결과를 시사하다."],
+    ["錯綜","さくそう","sakusou","착종, 뒤얽힘","情報が錯綜する。 / 정보가 뒤얽히다."],
+    ["逐次","ちくじ","chikuji","축차적으로","逐次報告する。 / 순차적으로 보고하다."],
+    ["網羅","もうら","moura","망라","全項目を網羅する。 / 전 항목을 망라하다."],
+    ["履行","りこう","rikou","이행","契約を履行する。 / 계약을 이행하다."],
+    ["凌駕","りょうが","ryouga","능가","予想を凌駕する。 / 예상을 능가하다."],
+    ["忌避","きひ","kihi","기피","責任を忌避する。 / 책임을 기피하다."],
+    ["是認","ぜにん","zenin","시인, 인정","過ちを是認する。 / 잘못을 시인하다."],
+    ["弊害","へいがい","heigai","폐해","制度の弊害を指摘する。 / 제도의 폐해를 지적하다."],
+    ["画一的","かくいつてき","kakuitsuteki","획일적","画一的な教育を批判する。 / 획일적인 교육을 비판하다."],
+    ["排除","はいじょ","haijo","배제","リスクを排除する。 / 리스크를 배제하다."],
+    ["顕現","けんげん","kengen","현현, 나타남","症状が顕現する。 / 증상이 나타나다."],
+    ["踏襲","とうしゅう","toushuu","답습","前例を踏襲する。 / 전례를 답습하다."],
+    ["呈する","ていする","teisuru","나타내다, 드러내다","危機的様相を呈する。 / 위기적 양상을 드러내다."],
+    ["一環","いっかん","ikkan","일환","改革の一環として実施する。 / 개혁의 일환으로 실시하다."],
+    ["兆候","ちょうこう","choukou","징조","回復の兆候が見える。 / 회복의 징조가 보인다."],
+    ["誘発","ゆうはつ","yuuhatsu","유발","事故を誘発する。 / 사고를 유발하다."],
+    ["逓減","ていげん","teigen","체감, 점차 줄어듦","効果が逓減する。 / 효과가 점차 줄어들다."],
+    ["培う","つちかう","tsuchikau","기르다, 배양하다","実力を培う。 / 실력을 기르다."],
+    ["危惧","きぐ","kigu","우려","将来を危惧する。 / 미래를 우려하다."],
+    ["助長","じょちょう","jochou","조장","悪習を助長する。 / 나쁜 습관을 조장하다."],
+    ["阻害","そがい","sogai","저해","発展を阻害する。 / 발전을 저해하다."],
+    ["邁進","まいしん","maishin","매진","目標に向かって邁進する。 / 목표를 향해 매진하다."],
+    ["逐一","ちくいち","chikuichi","낱낱이, 일일이","経過を逐一報告する。 / 경과를 낱낱이 보고하다."],
+    ["由々しい","ゆゆしい","yuyushii","중대하다, 심각하다","由々しい事態だ。 / 심각한 사태다."]
+  ]
+};
+
+const STORAGE_KEY = "tangochou_mastered_v1";
+const LEVELS = ["ALL","N5","N4","N3","N2","N1"];
+let currentLevel = "ALL";
+let deck = [];
+let idx = 0;
+let flipped = false;
+let mastered = {};
+
+function loadMastered(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      mastered = JSON.parse(raw);
+    }
+  }catch(e){
+    mastered = {};
+  }
+}
+
+function saveMastered(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mastered));
+  }catch(e){
+  }
+}
+
+function buildDeck(level){
+  let list = [];
+  if(level === "ALL"){
+    Object.keys(DATA).forEach(lv=>{
+      DATA[lv].forEach(w=>list.push({lv, w}));
+    });
+  } else {
+    DATA[level].forEach(w=>list.push({lv:level, w}));
+  }
+  return list;
+}
+
+function keyOf(item){ return item.lv + "_" + item.w[0]; }
+
+function renderTabs(){
+  const tabs = document.getElementById("tabs");
+  tabs.innerHTML = "";
+  LEVELS.forEach(lv=>{
+    const btn = document.createElement("button");
+    btn.className = "tab" + (lv===currentLevel ? " active":"");
+    const count = lv==="ALL" ? Object.values(DATA).reduce((a,b)=>a+b.length,0) : DATA[lv].length;
+    btn.innerHTML = (lv==="ALL" ? "전체" : lv) + ' <span class="cnt">('+count+')</span>';
+    btn.onclick = ()=>{ currentLevel = lv; idx=0; flipped=false; deck = buildDeck(currentLevel); renderTabs(); renderCard(); };
+    tabs.appendChild(btn);
+  });
+}
+
+function renderCard(){
+  const card = document.getElementById("card");
+  card.classList.remove("flipped");
+  flipped = false;
+
+  const item = deck[idx];
+  const [kanji, reading, romaji, meaning, example] = item.w;
+  const isMastered = !!mastered[keyOf(item)];
+
+  document.getElementById("kanjiText").textContent = kanji;
+  document.getElementById("readingText").textContent = reading;
+  document.getElementById("romajiText").textContent = romaji;
+  document.getElementById("meaningText").textContent = meaning;
+  document.getElementById("levelBadgeFront").textContent = item.lv;
+  document.getElementById("levelBadgeBack").textContent = item.lv;
+
+  if(example){
+    const parts = example.split(" / ");
+    document.getElementById("exampleText").innerHTML =
+      '<span class="jp">'+parts[0]+'</span><span class="kr">'+(parts[1]||"")+'</span>';
+  } else {
+    document.getElementById("exampleText").innerHTML = "";
+  }
+
+  document.getElementById("hankoMarkFront").style.display = isMastered ? "flex":"none";
+  document.getElementById("hankoMarkBack").style.display = isMastered ? "flex":"none";
+
+  document.getElementById("posLabel").textContent = (idx+1)+" / "+deck.length;
+  document.getElementById("deckLabel").textContent = currentLevel==="ALL" ? "전체" : currentLevel;
+  document.getElementById("progressFill").style.width = Math.round(((idx+1)/deck.length)*100)+"%";
+
+  document.getElementById("stampBtn").textContent = isMastered ? "도장 취소" : "도장 찍기 (외웠음)";
+
+  document.getElementById("prevBtn").disabled = idx===0;
+  document.getElementById("nextBtn").disabled = idx===deck.length-1;
+
+  renderAlbum();
+  renderTotal();
+}
+
+function renderTotal(){
+  document.getElementById("stampTotal").textContent = Object.keys(mastered).length;
+}
+
+function renderAlbum(){
+  const grid = document.getElementById("albumGrid");
+  const keys = Object.keys(mastered);
+  if(keys.length===0){
+    grid.innerHTML = '<div class="empty">아직 도장을 찍은 단어가 없어요. 카드를 뒤집고 "도장 찍기"를 눌러보세요.</div>';
+    return;
+  }
+  grid.innerHTML = "";
+  keys.forEach(k=>{
+    const info = mastered[k];
+    const tile = document.createElement("div");
+    tile.className = "stamp-tile";
+    tile.innerHTML = '<div class="k">'+info.kanji+'</div><div class="m">'+info.meaning+'</div>';
+    grid.appendChild(tile);
+  });
+}
+
+document.getElementById("card").addEventListener("click", ()=>{
+  flipped = !flipped;
+  document.getElementById("card").classList.toggle("flipped", flipped);
+});
+
+document.getElementById("prevBtn").onclick = (e)=>{
+  e.stopPropagation();
+  if(idx>0){ idx--; renderCard(); }
+};
+document.getElementById("nextBtn").onclick = (e)=>{
+  e.stopPropagation();
+  if(idx<deck.length-1){ idx++; renderCard(); }
+};
+document.getElementById("shuffleBtn").onclick = (e)=>{
+  e.stopPropagation();
+  for(let i=deck.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [deck[i],deck[j]] = [deck[j],deck[i]];
+  }
+  idx=0;
+  renderCard();
+};
+document.getElementById("stampBtn").onclick = (e)=>{
+  e.stopPropagation();
+  const item = deck[idx];
+  const k = keyOf(item);
+  if(mastered[k]){
+    delete mastered[k];
+  } else {
+    mastered[k] = { kanji:item.w[0], meaning:item.w[3] };
+  }
+  saveMastered();
+  renderCard();
+};
+
+document.querySelectorAll(".face").forEach(f=>{
+  f.querySelectorAll("button").forEach(b=>b.addEventListener("click", e=>e.stopPropagation()));
+});
+
+loadMastered();
+deck = buildDeck(currentLevel);
+renderTabs();
+renderCard();
+</script>
+</body>
+</html>
