@@ -1277,23 +1277,38 @@ document.getElementById("stampBtn").onclick = (e)=>{
   renderCard();
 };
 
+// 플래시카드 화면의 단어 음성(🔊) 버튼 전용 함수.
+// 항상 "현재 화면에 렌더링되어 보이는" 덱 배열(deck)과 인덱스(idx)에서 직접 단어를 읽어오므로,
+// 레벨 탭 전환이나 셔플(섞기)로 순서가 바뀌어도 재생되는 음성이 화면과 100% 동기화된다.
+// (원본 DATA 배열을 별도 인덱스로 다시 조회하지 않고, 화면에 쓰인 deck[idx]를 그대로 사용하는 것이 핵심)
+function speakVocab(field, btnEl){
+  const item = deck[idx];
+  if(!item) return;
+  let text = "";
+  if(field === "example"){
+    const [jp] = splitExample(item.w[4]);
+    text = jp;
+  } else {
+    // "kanji"(카드 앞면), "reading"(카드 뒷면) 모두 정확한 발음을 위해
+    // 항상 현재 카드의 단어 표기(w[0])를 그대로 읽는다.
+    text = item.w[0];
+  }
+  speakJapanese(text, btnEl);
+}
+
 document.getElementById("audioBtn").onclick = (e)=>{
   e.stopPropagation();
-  const item = deck[idx];
-  const [jp] = splitExample(item.w[4]);
-  speakJapanese(jp, document.getElementById("audioBtn"));
+  speakVocab("example", document.getElementById("audioBtn"));
 };
 
 document.getElementById("kanjiAudioBtn").onclick = (e)=>{
   e.stopPropagation();
-  const item = deck[idx];
-  speakJapanese(item.w[0], document.getElementById("kanjiAudioBtn"));
+  speakVocab("kanji", document.getElementById("kanjiAudioBtn"));
 };
 
 document.getElementById("readingAudioBtn").onclick = (e)=>{
   e.stopPropagation();
-  const item = deck[idx];
-  speakJapanese(item.w[0], document.getElementById("readingAudioBtn"));
+  speakVocab("reading", document.getElementById("readingAudioBtn"));
 };
 
 document.getElementById("vocabCardBtn").onclick = ()=>{
